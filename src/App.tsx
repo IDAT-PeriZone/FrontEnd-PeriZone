@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import './App.css'
-import type { TabId, Product, CartItem, CategoryId } from './types'
+import type { TabId, Product, CartItem, CategoryId, OrderDetails } from './types'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import HomeTab from './components/HomeTab'
 import CatalogTab from './components/CatalogTab'
 import ProductDetailTab from './components/ProductDetailTab'
 import CartTab from './components/CartTab'
+import CheckoutTab from './components/CheckoutTab'
 import OrderSuccessModal from './components/OrderSuccessModal'
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
   const [categoryFilter, setCategoryFilter] = useState<CategoryId>('Todos')
   const [cart, setCart] = useState<CartItem[]>([])
   const [showSuccess, setShowSuccess] = useState(false)
+  const [_lastOrder, setLastOrder] = useState<OrderDetails | null>(null)
 
   const handleNavigate = (tab: TabId, product?: Product) => {
     if (tab === 'detalle' && product) setSelectedProduct(product)
@@ -48,7 +50,12 @@ function App() {
   }
 
   const handleCheckout = () => {
-    setShowSuccess(true)
+    setActiveTab('checkout')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleOrderComplete = (order: OrderDetails) => {
+    setLastOrder(order)
     setCart([])
   }
 
@@ -98,6 +105,13 @@ function App() {
             onRemove={handleRemove}
             onNavigate={handleNavigate}
             onCheckout={handleCheckout}
+          />
+        )}
+        {activeTab === 'checkout' && (
+          <CheckoutTab
+            cartItems={cart}
+            onNavigate={handleNavigate}
+            onOrderComplete={handleOrderComplete}
           />
         )}
       </main>
