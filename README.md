@@ -1,73 +1,196 @@
-# React + TypeScript + Vite
+# PERIZONE — Tienda de Periféricos Gaming
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicación web e-commerce para la tienda **PERIZONE**, construida con **React 19 + TypeScript + Vite**.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Despliegue local (Desarrollo)
 
-## React Compiler
+### Requisitos previos
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- [Node.js](https://nodejs.org/) v18 o superior
+- npm v9 o superior
 
-## Expanding the ESLint configuration
+### Pasos
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+```bash
+# 1. Clonar el repositorio
+git clone <url-del-repositorio>
+cd FrontEnd-PeriZone
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+# 2. Instalar dependencias
+npm install
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# 3. Iniciar el servidor de desarrollo
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+La aplicación estará disponible en **http://localhost:5173/**
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+> El servidor incluye Hot Module Replacement (HMR): los cambios en el código se reflejan automáticamente en el navegador sin recargar la página.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+---
+
+## 🏗️ Build para Producción
+
+```bash
+# Compilar TypeScript y generar bundle optimizado
+npm run build
 ```
+
+Los archivos generados quedan en la carpeta `dist/`. Para previsualizar el build localmente:
+
+```bash
+npm run preview
+```
+
+La preview estará disponible en **http://localhost:4173/**
+
+---
+
+## 📁 Estructura del proyecto
+
+```
+FrontEnd-PeriZone/
+├── public/                   # Imágenes de productos (servidas estáticamente)
+│   ├── keyboard.png
+│   ├── mouse.png
+│   ├── headset.png
+│   ├── webcam.png
+│   ├── monitor.png
+│   └── mousepad.png
+├── src/
+│   ├── components/           # Componentes de cada vista
+│   │   ├── Navbar.tsx        # Barra de navegación con búsqueda y carrito
+│   │   ├── Footer.tsx        # Pie de página
+│   │   ├── HomeTab.tsx       # Página de inicio (hero + productos destacados)
+│   │   ├── CatalogTab.tsx    # Catálogo con filtros y búsqueda
+│   │   ├── ProductDetailTab.tsx  # Vista de detalle de producto
+│   │   ├── CartTab.tsx       # Carrito de compras
+│   │   └── OrderSuccessModal.tsx # Modal de compra exitosa
+│   ├── data/
+│   │   └── products.ts       # Base de datos local de productos
+│   ├── types.ts              # Interfaces TypeScript compartidas
+│   ├── App.tsx               # Componente raíz y estado global
+│   ├── App.css               # Estilos del sistema de diseño
+│   ├── index.css             # Estilos globales y fuentes
+│   └── main.tsx              # Punto de entrada de la aplicación
+├── package.json
+├── tsconfig.json
+└── vite.config.ts
+```
+
+---
+
+## 🛠️ Scripts disponibles
+
+| Comando | Descripción |
+|---|---|
+| `npm run dev` | Inicia el servidor de desarrollo con HMR |
+| `npm run build` | Genera el bundle de producción en `dist/` |
+| `npm run preview` | Previsualiza el build de producción localmente |
+| `npm run lint` | Ejecuta ESLint sobre el código fuente |
+
+---
+
+## 🎨 Stack tecnológico
+
+| Tecnología | Versión | Uso |
+|---|---|---|
+| React | 19.x | Framework UI |
+| TypeScript | 6.x | Tipado estático |
+| Vite | 8.x | Bundler y servidor de desarrollo |
+| Vanilla CSS | — | Estilos (sin frameworks externos) |
+
+### Paleta de colores
+
+| Token | Color | Uso |
+|---|---|---|
+| Cyan | `#00b4d8` | Botones primarios, precios, links activos |
+| Lime | `#c8f135` | Botón de checkout, badges |
+| Dark | `#09090b` | Fondo principal |
+| Card | `#111113` | Tarjetas y paneles |
+
+### Tipografía
+
+- **Headings:** [Outfit](https://fonts.google.com/specimen/Outfit) (Google Fonts)
+- **Body:** [Plus Jakarta Sans](https://fonts.google.com/specimen/Plus+Jakarta+Sans) (Google Fonts)
+
+---
+
+## 📦 Despliegue en producción
+
+### Vercel (recomendado)
+
+```bash
+# Instalar Vercel CLI
+npm install -g vercel
+
+# Desplegar (primera vez)
+vercel
+
+# Desplegar actualizaciones
+vercel --prod
+```
+
+### Netlify
+
+```bash
+# Instalar Netlify CLI
+npm install -g netlify-cli
+
+# Build y deploy
+npm run build
+netlify deploy --prod --dir=dist
+```
+
+### Servidor propio (Nginx / Apache)
+
+```bash
+# 1. Generar el build
+npm run build
+
+# 2. Copiar la carpeta dist/ al servidor web
+# Ejemplo con scp:
+scp -r dist/ usuario@servidor:/var/www/perizone/
+
+# 3. Configurar Nginx para servir SPA (Single Page Application)
+```
+
+**Configuración Nginx recomendada para SPA:**
+
+```nginx
+server {
+    listen 80;
+    server_name tudominio.com;
+    root /var/www/perizone;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+```
+
+> ⚠️ La directiva `try_files $uri $uri/ /index.html` es esencial para que React Router (o navegación SPA) funcione correctamente al recargar la página.
+
+---
+
+## 🔧 Variables de entorno (futuro)
+
+Si en el futuro se conecta a una API backend, crear un archivo `.env` en la raíz:
+
+```env
+VITE_API_URL=https://api.perizone.com
+VITE_API_KEY=tu_clave_aqui
+```
+
+Las variables en Vite deben comenzar con el prefijo `VITE_` para ser accesibles en el cliente.
+
+---
+
+## 📝 Notas de desarrollo
+
+- El proyecto **no tiene dependencias externas de UI** (sin Tailwind, sin MUI, sin Bootstrap). Todo el sistema de diseño está implementado en `App.css` con CSS puro.
+- Los datos de productos están en `src/data/products.ts`. Para conectar a una API real, reemplazar las importaciones de ese archivo por llamadas `fetch`/`axios`.
+- Las imágenes de productos se sirven desde la carpeta `public/` con rutas absolutas (ej. `/keyboard.png`).
