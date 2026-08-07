@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { PRODUCTS, CATEGORIES } from '../data/products';
+import { useCategories } from '../hooks/useCategories';
+import { useProducts } from '../hooks/useProducts';
 import type { Product, TabId, CategoryId } from '../types';
 
 interface CatalogTabProps {
@@ -18,21 +19,28 @@ const PRICE_RANGES = [
 ];
 
 export default function CatalogTab({ onNavigate, searchQuery, categoryFilter, onCategoryFilter }: CatalogTabProps) {
+  const { categories } = useCategories();
+  const { products, loading, error } = useProducts();
   const [priceRange, setPriceRange] = useState(0);
-  const [sortBy, setSortBy] = useState<'default' | 'price-asc' | 'price-desc' | 'rating'>('default');
+  const [sortBy, setSortBy] = useState<'default' | 'price-asc' | 'price-desc'>('default');
 
+  const categoryName = (id: number) => categories.find(c => c.id === id)?.nombre ?? '';
   const range = PRICE_RANGES[priceRange];
 
   const filtered = useMemo(() => {
-    let result = [...PRODUCTS];
-    if (categoryFilter !== 'Todos') result = result.filter(p => p.category === categoryFilter);
-    if (searchQuery) result = result.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.shortDescription.toLowerCase().includes(searchQuery.toLowerCase()));
-    result = result.filter(p => p.price >= range.min && p.price <= range.max);
-    if (sortBy === 'price-asc') result.sort((a, b) => a.price - b.price);
-    else if (sortBy === 'price-desc') result.sort((a, b) => b.price - a.price);
-    else if (sortBy === 'rating') result.sort((a, b) => b.rating - a.rating);
+    let result = [...products];
+    if (categoryFilter !== 'Todos') result = result.filter(p => p.id_categoria === categoryFilter);
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        p => p.nombre.toLowerCase().includes(q) || (p.descripcion ?? '').toLowerCase().includes(q)
+      );
+    }
+    result = result.filter(p => p.precio >= range.min && p.precio <= range.max);
+    if (sortBy === 'price-asc') result.sort((a, b) => a.precio - b.precio);
+    else if (sortBy === 'price-desc') result.sort((a, b) => b.precio - a.precio);
     return result;
-  }, [categoryFilter, searchQuery, priceRange, sortBy, range.min, range.max]);
+  }, [products, categoryFilter, searchQuery, sortBy, range.min, range.max]);
 
   return (
     <div className="catalog-tab">
@@ -41,16 +49,23 @@ export default function CatalogTab({ onNavigate, searchQuery, categoryFilter, on
         <div className="sidebar-section">
           <h3>Categoría</h3>
           <ul className="sidebar-cat-list">
-            {CATEGORIES.map(cat => (
-              <li key={cat}>
+            <li>
+              <button
+                className={`sidebar-cat-btn ${categoryFilter === 'Todos' ? 'active' : ''}`}
+                onClick={() => onCategoryFilter('Todos')}
+              >
+                <span>Todos</span>
+                <span className="cat-count">{products.length}</span>
+              </button>
+            </li>
+            {categories.map(cat => (
+              <li key={cat.id}>
                 <button
-                  className={`sidebar-cat-btn ${categoryFilter === cat ? 'active' : ''}`}
-                  onClick={() => onCategoryFilter(cat as CategoryId)}
+                  className={`sidebar-cat-btn ${categoryFilter === cat.id ? 'active' : ''}`}
+                  onClick={() => onCategoryFilter(cat.id)}
                 >
-                  <span>{cat}</span>
-                  <span className="cat-count">
-                    {cat === 'Todos' ? PRODUCTS.length : PRODUCTS.filter(p => p.category === cat).length}
-                  </span>
+                  <span>{cat.nombre}</span>
+                  <span className="cat-count">{products.filter(p => p.id_categoria === cat.id).length}</span>
                 </button>
               </li>
             ))}
@@ -72,14 +87,6 @@ export default function CatalogTab({ onNavigate, searchQuery, categoryFilter, on
             ))}
           </ul>
         </div>
-
-        <div className="sidebar-section">
-          <h3>Disponibilidad</h3>
-          <label className="sidebar-check">
-            <input type="checkbox" defaultChecked />
-            En stock
-          </label>
-        </div>
       </aside>
 
       {/* Main Content */}
@@ -89,7 +96,7 @@ export default function CatalogTab({ onNavigate, searchQuery, categoryFilter, on
             <span className="results-count">{filtered.length} productos</span>
             {categoryFilter !== 'Todos' && (
               <span className="filter-tag">
-                {categoryFilter}
+                {categoryName(categoryFilter)}
                 <button onClick={() => onCategoryFilter('Todos')}>×</button>
               </span>
             )}
@@ -100,12 +107,17 @@ export default function CatalogTab({ onNavigate, searchQuery, categoryFilter, on
               <option value="default">Destacados</option>
               <option value="price-asc">Precio: Menor a Mayor</option>
               <option value="price-desc">Precio: Mayor a Menor</option>
-              <option value="rating">Mejor calificación</option>
             </select>
           </div>
         </div>
 
-        {filtered.length === 0 ? (
+        {error && <p className="field-error">{error}</p>}
+
+        {loading ? (
+          <div className="empty-state">
+            <p>Cargando productos…</p>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="empty-state">
             <span>🔍</span>
             <p>No se encontraron productos con los filtros aplicados.</p>
@@ -117,25 +129,16 @@ export default function CatalogTab({ onNavigate, searchQuery, categoryFilter, on
           <div className="catalog-grid">
             {filtered.map(product => (
               <div key={product.id} className="product-card" onClick={() => onNavigate('detalle', product)}>
-                {product.badge && <span className="product-badge">{product.badge}</span>}
                 <div className="product-card-img">
-                  <img src={product.mainImage} alt={product.name} />
+                  <img src={product.imagen_url ?? undefined} alt={product.nombre} />
                 </div>
                 <div className="product-card-body">
-                  <span className="product-card-cat">{product.category}</span>
-                  <h3 className="product-card-name">{product.name}</h3>
-                  <p className="product-card-desc">{product.shortDescription}</p>
-                  <div className="product-card-rating">
-                    {'★'.repeat(Math.floor(product.rating))}
-                    <span className="rating-val">{product.rating}</span>
-                    <span className="rating-count">({product.reviewCount})</span>
-                  </div>
+                  <span className="product-card-cat">{categoryName(product.id_categoria)}</span>
+                  <h3 className="product-card-name">{product.nombre}</h3>
+                  <p className="product-card-desc">{product.descripcion}</p>
                   <div className="product-card-footer">
                     <div className="product-card-price">
-                      <span className="price-main">S/ {product.price.toFixed(2)}</span>
-                      {product.originalPrice && (
-                        <span className="price-original">S/ {product.originalPrice.toFixed(2)}</span>
-                      )}
+                      <span className="price-main">S/ {product.precio.toFixed(2)}</span>
                     </div>
                     <span className={`stock-badge ${product.stock > 10 ? 'in-stock' : product.stock > 0 ? 'low-stock' : 'out-stock'}`}>
                       {product.stock > 10 ? 'En stock' : product.stock > 0 ? `Últimas ${product.stock}` : 'Agotado'}

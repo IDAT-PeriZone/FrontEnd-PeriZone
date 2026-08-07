@@ -1,15 +1,24 @@
-import type { TabId, CartItem } from '../types';
+import type { TabId } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 
 interface NavbarProps {
   activeTab: TabId;
   onNavigate: (tab: TabId) => void;
-  cartItems: CartItem[];
   searchQuery: string;
   onSearchChange: (q: string) => void;
+  onOpenAuth: () => void;
 }
 
-export default function Navbar({ activeTab, onNavigate, cartItems, searchQuery, onSearchChange }: NavbarProps) {
-  const totalQty = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+export default function Navbar({ activeTab, onNavigate, searchQuery, onSearchChange, onOpenAuth }: NavbarProps) {
+  const { usuario, logout } = useAuth();
+  const { cart } = useCart();
+  const totalQty = cart?.items.reduce((acc, item) => acc + item.cantidad, 0) ?? 0;
+
+  const handleMisPedidos = () => {
+    if (!usuario) { onOpenAuth(); return; }
+    onNavigate('pedidos');
+  };
 
   return (
     <header className="navbar">
@@ -27,10 +36,7 @@ export default function Navbar({ activeTab, onNavigate, cartItems, searchQuery, 
           <button className={`nav-link ${activeTab === 'catalogo' ? 'active' : ''}`} onClick={() => onNavigate('catalogo')}>
             Productos
           </button>
-          <button className="nav-link" onClick={() => onNavigate('catalogo')}>
-            Categorías
-          </button>
-          <button className="nav-link" onClick={() => onNavigate('catalogo')}>
+          <button className={`nav-link ${activeTab === 'pedidos' ? 'active' : ''}`} onClick={handleMisPedidos}>
             Mis pedidos
           </button>
         </nav>
@@ -57,6 +63,17 @@ export default function Navbar({ activeTab, onNavigate, cartItems, searchQuery, 
           <span>Carrito</span>
           {totalQty > 0 && <span className="cart-badge">{totalQty}</span>}
         </button>
+
+        {/* Auth */}
+        {usuario ? (
+          <button className="nav-link" onClick={logout} title={usuario.correo}>
+            Hola, {usuario.nombre} · Salir
+          </button>
+        ) : (
+          <button className="btn-outline" onClick={onOpenAuth}>
+            Iniciar sesión
+          </button>
+        )}
       </div>
     </header>
   );

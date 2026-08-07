@@ -1,4 +1,5 @@
-import { PRODUCTS, CATEGORIES } from '../data/products';
+import { useCategories } from '../hooks/useCategories';
+import { useProducts } from '../hooks/useProducts';
 import type { Product, TabId, CategoryId } from '../types';
 
 interface HomeTabProps {
@@ -6,18 +7,20 @@ interface HomeTabProps {
   onCategoryFilter: (cat: CategoryId) => void;
 }
 
-export default function HomeTab({ onNavigate, onCategoryFilter }: HomeTabProps) {
-  const featured = PRODUCTS.slice(0, 4);
+function categoryIcon(nombre: string): string {
+  const n = nombre.toLowerCase();
+  if (n.includes('teclado')) return '⌨️';
+  if (n.includes('mouse')) return '🖱️';
+  if (n.includes('headset') || n.includes('audíf') || n.includes('audif')) return '🎧';
+  if (n.includes('webcam')) return '📷';
+  if (n.includes('monitor')) return '🖥️';
+  return '🎛️';
+}
 
-  const categoryIcons: Record<string, string> = {
-    Todos: '🎮',
-    Teclados: '⌨️',
-    Mouse: '🖱️',
-    Headsets: '🎧',
-    Webcams: '📷',
-    Monitores: '🖥️',
-    Accesorios: '🎛️',
-  };
+export default function HomeTab({ onNavigate, onCategoryFilter }: HomeTabProps) {
+  const { categories, loading: loadingCats } = useCategories();
+  const { products, loading: loadingProducts, error } = useProducts();
+  const featured = products.slice(0, 4);
 
   return (
     <div className="home-tab">
@@ -41,17 +44,17 @@ export default function HomeTab({ onNavigate, onCategoryFilter }: HomeTabProps) 
               </svg>
             </button>
             <button className="btn-outline" onClick={() => onNavigate('catalogo')}>
-              Ver ofertas
+              Ver catálogo completo
             </button>
           </div>
           <div className="hero-stats">
             <div className="hero-stat">
-              <span className="stat-val">+500</span>
+              <span className="stat-val">{products.length || '—'}</span>
               <span className="stat-lbl">Productos</span>
             </div>
             <div className="hero-stat">
-              <span className="stat-val">4.8★</span>
-              <span className="stat-lbl">Calificación</span>
+              <span className="stat-val">{categories.length || '—'}</span>
+              <span className="stat-lbl">Categorías</span>
             </div>
             <div className="hero-stat">
               <span className="stat-val">24h</span>
@@ -71,18 +74,26 @@ export default function HomeTab({ onNavigate, onCategoryFilter }: HomeTabProps) 
           <h2>Categorías destacadas</h2>
           <button className="section-link" onClick={() => onNavigate('catalogo')}>Ver todas →</button>
         </div>
-        <div className="category-pills">
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat}
-              className="cat-pill"
-              onClick={() => { onCategoryFilter(cat as CategoryId); onNavigate('catalogo'); }}
-            >
-              <span className="cat-icon">{categoryIcons[cat]}</span>
-              {cat}
+        {loadingCats ? (
+          <p className="catalog-results-label">Cargando categorías…</p>
+        ) : (
+          <div className="category-pills">
+            <button className="cat-pill" onClick={() => { onCategoryFilter('Todos'); onNavigate('catalogo'); }}>
+              <span className="cat-icon">🎮</span>
+              Todos
             </button>
-          ))}
-        </div>
+            {categories.map(cat => (
+              <button
+                key={cat.id}
+                className="cat-pill"
+                onClick={() => { onCategoryFilter(cat.id); onNavigate('catalogo'); }}
+              >
+                <span className="cat-icon">{categoryIcon(cat.nombre)}</span>
+                {cat.nombre}
+              </button>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Featured Products */}
@@ -91,36 +102,31 @@ export default function HomeTab({ onNavigate, onCategoryFilter }: HomeTabProps) 
           <h2>Productos destacados</h2>
           <button className="section-link" onClick={() => onNavigate('catalogo')}>Ver todos →</button>
         </div>
-        <div className="featured-grid">
-          {featured.map(product => (
-            <div key={product.id} className="product-card" onClick={() => onNavigate('detalle', product)}>
-              {product.badge && <span className="product-badge">{product.badge}</span>}
-              <div className="product-card-img">
-                <img src={product.mainImage} alt={product.name} />
-              </div>
-              <div className="product-card-body">
-                <span className="product-card-cat">{product.category}</span>
-                <h3 className="product-card-name">{product.name}</h3>
-                <div className="product-card-rating">
-                  {'★'.repeat(Math.floor(product.rating))}
-                  <span className="rating-val">{product.rating}</span>
-                  <span className="rating-count">({product.reviewCount})</span>
+        {error && <p className="field-error">{error}</p>}
+        {loadingProducts ? (
+          <p className="catalog-results-label">Cargando productos…</p>
+        ) : (
+          <div className="featured-grid">
+            {featured.map(product => (
+              <div key={product.id} className="product-card" onClick={() => onNavigate('detalle', product)}>
+                <div className="product-card-img">
+                  <img src={product.imagen_url ?? undefined} alt={product.nombre} />
                 </div>
-                <div className="product-card-footer">
-                  <div className="product-card-price">
-                    <span className="price-main">S/ {product.price.toFixed(2)}</span>
-                    {product.originalPrice && (
-                      <span className="price-original">S/ {product.originalPrice.toFixed(2)}</span>
-                    )}
+                <div className="product-card-body">
+                  <h3 className="product-card-name">{product.nombre}</h3>
+                  <div className="product-card-footer">
+                    <div className="product-card-price">
+                      <span className="price-main">S/ {product.precio.toFixed(2)}</span>
+                    </div>
+                    <button className="btn-card-action" onClick={e => { e.stopPropagation(); onNavigate('detalle', product); }}>
+                      Ver detalle
+                    </button>
                   </div>
-                  <button className="btn-card-action" onClick={e => { e.stopPropagation(); onNavigate('detalle', product); }}>
-                    Ver detalle
-                  </button>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Banner CTA */}
@@ -128,7 +134,7 @@ export default function HomeTab({ onNavigate, onCategoryFilter }: HomeTabProps) 
         <div className="promo-inner">
           <div>
             <h2>¿Listo para armar tu setup?</h2>
-            <p>Explora más de 500 productos con garantía y envío a todo el país.</p>
+            <p>Explora el catálogo completo con stock y precios en tiempo real.</p>
           </div>
           <button className="btn-primary" onClick={() => onNavigate('catalogo')}>
             Ir al catálogo

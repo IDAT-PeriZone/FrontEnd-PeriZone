@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import './App.css'
-import type { TabId, Product, CartItem, CategoryId, OrderDetails } from './types'
+import type { TabId, Product, CategoryId } from './types'
+import { AuthProvider } from './context/AuthContext'
+import { CartProvider } from './context/CartContext'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import HomeTab from './components/HomeTab'
@@ -8,16 +10,15 @@ import CatalogTab from './components/CatalogTab'
 import ProductDetailTab from './components/ProductDetailTab'
 import CartTab from './components/CartTab'
 import CheckoutTab from './components/CheckoutTab'
-import OrderSuccessModal from './components/OrderSuccessModal'
+import MisPedidosTab from './components/MisPedidosTab'
+import AuthModal from './components/AuthModal'
 
-function App() {
+function AppContent() {
   const [activeTab, setActiveTab] = useState<TabId>('inicio')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<CategoryId>('Todos')
-  const [cart, setCart] = useState<CartItem[]>([])
-  const [showSuccess, setShowSuccess] = useState(false)
-  const [_lastOrder, setLastOrder] = useState<OrderDetails | null>(null)
+  const [showAuthModal, setShowAuthModal] = useState(false)
 
   const handleNavigate = (tab: TabId, product?: Product) => {
     if (tab === 'detalle' && product) setSelectedProduct(product)
@@ -25,63 +26,24 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const handleAddToCart = (product: Product, qty: number) => {
-    setCart(prev => {
-      const existing = prev.find(item => item.product.id === product.id)
-      if (existing) {
-        return prev.map(item =>
-          item.product.id === product.id
-            ? { ...item, quantity: Math.min(item.product.stock, item.quantity + qty) }
-            : item
-        )
-      }
-      return [...prev, { product, quantity: qty }]
-    })
-  }
-
-  const handleUpdateQty = (productId: string, qty: number) => {
-    setCart(prev => prev.map(item =>
-      item.product.id === productId ? { ...item, quantity: qty } : item
-    ))
-  }
-
-  const handleRemove = (productId: string) => {
-    setCart(prev => prev.filter(item => item.product.id !== productId))
-  }
-
   const handleCheckout = () => {
     setActiveTab('checkout')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
-
-  const handleOrderComplete = (order: OrderDetails) => {
-    setLastOrder(order)
-    setCart([])
-  }
-
-  const handleCloseSuccess = () => {
-    setShowSuccess(false)
-  }
-
-  const orderTotal = cart.reduce((acc, item) => acc + item.product.price * item.quantity, 0)
-  const orderTotalWithTaxAndShipping = orderTotal + (cart.length > 0 ? 15 : 0) + orderTotal * 0.18
 
   return (
     <div className="perizone-app">
       <Navbar
         activeTab={activeTab}
         onNavigate={handleNavigate}
-        cartItems={cart}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        onOpenAuth={() => setShowAuthModal(true)}
       />
 
       <main className="perizone-main">
         {activeTab === 'inicio' && (
-          <HomeTab
-            onNavigate={handleNavigate}
-            onCategoryFilter={cat => setCategoryFilter(cat)}
-          />
+          <HomeTab onNavigate={handleNavigate} onCategoryFilter={cat => setCategoryFilter(cat)} />
         )}
         {activeTab === 'catalogo' && (
           <CatalogTab
@@ -92,40 +54,27 @@ function App() {
           />
         )}
         {activeTab === 'detalle' && selectedProduct && (
-          <ProductDetailTab
-            product={selectedProduct}
-            onNavigate={handleNavigate}
-            onAddToCart={handleAddToCart}
-          />
+          <ProductDetailTab product={selectedProduct} onNavigate={handleNavigate} />
         )}
-        {activeTab === 'carrito' && (
-          <CartTab
-            cartItems={cart}
-            onUpdateQty={handleUpdateQty}
-            onRemove={handleRemove}
-            onNavigate={handleNavigate}
-            onCheckout={handleCheckout}
-          />
-        )}
-        {activeTab === 'checkout' && (
-          <CheckoutTab
-            cartItems={cart}
-            onNavigate={handleNavigate}
-            onOrderComplete={handleOrderComplete}
-          />
-        )}
+        {activeTab === 'carrito' && <CartTab onNavigate={handleNavigate} onCheckout={handleCheckout} />}
+        {activeTab === 'checkout' && <CheckoutTab onNavigate={handleNavigate} />}
+        {activeTab === 'pedidos' && <MisPedidosTab onNavigate={handleNavigate} />}
       </main>
 
       <Footer />
 
-      {showSuccess && (
-        <OrderSuccessModal
-          onClose={handleCloseSuccess}
-          onNavigate={handleNavigate}
-          orderTotal={orderTotalWithTaxAndShipping}
-        />
-      )}
+      {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
     </div>
+  )
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <CartProvider>
+        <AppContent />
+      </CartProvider>
+    </AuthProvider>
   )
 }
 

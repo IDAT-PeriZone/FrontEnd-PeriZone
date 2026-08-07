@@ -1,22 +1,60 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Product, TabId } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
+import { useCategories } from '../hooks/useCategories';
+import * as productosApi from '../api/productos';
+import { ApiError, getToken } from '../api/client';
+import AuthModal from './AuthModal';
 
 interface ProductDetailTabProps {
   product: Product;
   onNavigate: (tab: TabId) => void;
-  onAddToCart: (product: Product, qty: number) => void;
 }
 
-export default function ProductDetailTab({ product, onNavigate, onAddToCart }: ProductDetailTabProps) {
+export default function ProductDetailTab({ product: initialProduct, onNavigate }: ProductDetailTabProps) {
+  const { usuario } = useAuth();
+  const { addItem } = useCart();
+  const { categories } = useCategories();
+
+  const [product, setProduct] = useState<Product>(initialProduct);
   const [qty, setQty] = useState(1);
   const [activeThumb, setActiveThumb] = useState(0);
   const [showSpecs, setShowSpecs] = useState(false);
   const [addedFeedback, setAddedFeedback] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [addError, setAddError] = useState('');
+  const [adding, setAdding] = useState(false);
 
-  const handleAdd = () => {
-    onAddToCart(product, qty);
-    setAddedFeedback(true);
-    setTimeout(() => setAddedFeedback(false), 2000);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset local UI state when navigating to a different product
+    setQty(1);
+    setActiveThumb(0);
+    setProduct(initialProduct);
+    productosApi.obtener(initialProduct.id).then(setProduct).catch(() => {});
+  }, [initialProduct]);
+
+  const categoryName = categories.find(c => c.id === product.id_categoria)?.nombre ?? '';
+  const gallery = product.imagenes?.length
+    ? [product.imagen_url, ...product.imagenes.map(i => i.imagen_url)].filter((v): v is string => !!v)
+    : [product.imagen_url].filter((v): v is string => !!v);
+
+  const handleAdd = async () => {
+    if (!getToken()) {
+      setShowAuthModal(true);
+      return;
+    }
+    setAddError('');
+    setAdding(true);
+    try {
+      await addItem(product.id, qty);
+      setAddedFeedback(true);
+      setTimeout(() => setAddedFeedback(false), 2000);
+    } catch (err) {
+      setAddError(err instanceof ApiError ? err.message : 'No se pudo agregar el producto al carrito');
+    } finally {
+      setAdding(false);
+    }
   };
 
   const stockStatus = product.stock > 10
@@ -24,10 +62,6 @@ export default function ProductDetailTab({ product, onNavigate, onAddToCart }: P
     : product.stock > 0
       ? { label: `Solo ${product.stock} disponibles`, cls: 'low-stock' }
       : { label: 'Agotado', cls: 'out-stock' };
-
-  const discount = product.originalPrice
-    ? Math.round((1 - product.price / product.originalPrice) * 100)
-    : null;
 
   return (
     <div className="detail-page">
@@ -37,53 +71,40 @@ export default function ProductDetailTab({ product, onNavigate, onAddToCart }: P
         <span>/</span>
         <button onClick={() => onNavigate('catalogo')}>Catálogo</button>
         <span>/</span>
-        <span>{product.category}</span>
+        <span>{categoryName}</span>
         <span>/</span>
-        <span className="breadcrumb-current">{product.name}</span>
+        <span className="breadcrumb-current">{product.nombre}</span>
       </div>
 
       <div className="detail-layout">
         {/* Gallery */}
         <div className="detail-gallery">
           <div className="gallery-main">
-            <img src={product.thumbnails[activeThumb] || product.mainImage} alt={product.name} />
-            {discount && <span className="gallery-discount">-{discount}%</span>}
+            <img src={gallery[activeThumb] ?? gallery[0]} alt={product.nombre} />
           </div>
-          <div className="gallery-thumbs">
-            {product.thumbnails.map((thumb, i) => (
-              <button
-                key={i}
-                className={`gallery-thumb ${activeThumb === i ? 'active' : ''}`}
-                onClick={() => setActiveThumb(i)}
-              >
-                <img src={thumb} alt={`${product.name} ${i + 1}`} />
-              </button>
-            ))}
-          </div>
+          {gallery.length > 1 && (
+            <div className="gallery-thumbs">
+              {gallery.map((thumb, i) => (
+                <button
+                  key={i}
+                  className={`gallery-thumb ${activeThumb === i ? 'active' : ''}`}
+                  onClick={() => setActiveThumb(i)}
+                >
+                  <img src={thumb} alt={`${product.nombre} ${i + 1}`} />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Info */}
         <div className="detail-info">
-          <span className="detail-category">{product.category}</span>
-          {product.badge && <span className="product-badge">{product.badge}</span>}
-          <h1 className="detail-title">{product.name}</h1>
-
-          {/* Rating */}
-          <div className="detail-rating">
-            <span className="stars">{'★'.repeat(Math.floor(product.rating))}</span>
-            <span className="rating-num">{product.rating}</span>
-            <span className="rating-reviews">({product.reviewCount} reseñas)</span>
-          </div>
+          <span className="detail-category">{categoryName}</span>
+          <h1 className="detail-title">{product.nombre}</h1>
 
           {/* Price */}
           <div className="detail-price-block">
-            <span className="detail-price">S/ {product.price.toFixed(2)}</span>
-            {product.originalPrice && (
-              <>
-                <span className="detail-original">S/ {product.originalPrice.toFixed(2)}</span>
-                <span className="detail-save">Ahorras S/ {(product.originalPrice - product.price).toFixed(2)}</span>
-              </>
-            )}
+            <span className="detail-price">S/ {product.precio.toFixed(2)}</span>
           </div>
 
           {/* Stock */}
@@ -92,8 +113,8 @@ export default function ProductDetailTab({ product, onNavigate, onAddToCart }: P
             {stockStatus.label}
           </div>
 
-          {/* Short Description */}
-          <p className="detail-short-desc">{product.shortDescription}</p>
+          {/* Description */}
+          <p className="detail-short-desc">{product.descripcion}</p>
 
           {/* Quantity + Add to cart */}
           <div className="detail-actions">
@@ -105,7 +126,7 @@ export default function ProductDetailTab({ product, onNavigate, onAddToCart }: P
             <button
               className={`btn-add-cart ${addedFeedback ? 'added' : ''}`}
               onClick={handleAdd}
-              disabled={product.stock === 0}
+              disabled={product.stock === 0 || adding}
             >
               {addedFeedback ? (
                 <>
@@ -120,11 +141,13 @@ export default function ProductDetailTab({ product, onNavigate, onAddToCart }: P
                     <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
                     <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
                   </svg>
-                  Agregar al carrito
+                  {adding ? 'Agregando…' : 'Agregar al carrito'}
                 </>
               )}
             </button>
           </div>
+          {addError && <p className="field-error">{addError}</p>}
+          {!usuario && <p className="catalog-results-label">Inicia sesión para agregar productos al carrito.</p>}
 
           <button className="btn-back" onClick={() => onNavigate('catalogo')}>
             ← Volver al catálogo
@@ -133,20 +156,21 @@ export default function ProductDetailTab({ product, onNavigate, onAddToCart }: P
           {/* Specs Accordion */}
           <div className="specs-accordion">
             <button className="specs-toggle" onClick={() => setShowSpecs(s => !s)}>
-              <span>Descripción detallada y especificaciones</span>
+              <span>Detalles del producto</span>
               <span className="toggle-icon">{showSpecs ? '▲' : '▼'}</span>
             </button>
             {showSpecs && (
               <div className="specs-content">
-                <p className="specs-long-desc">{product.longDescription}</p>
                 <table className="specs-table">
                   <tbody>
-                    {product.specs.map(spec => (
-                      <tr key={spec.label}>
-                        <td className="spec-label">{spec.label}</td>
-                        <td className="spec-value">{spec.value}</td>
-                      </tr>
-                    ))}
+                    <tr>
+                      <td className="spec-label">Categoría</td>
+                      <td className="spec-value">{categoryName}</td>
+                    </tr>
+                    <tr>
+                      <td className="spec-label">Stock disponible</td>
+                      <td className="spec-value">{product.stock} unidades</td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -154,6 +178,10 @@ export default function ProductDetailTab({ product, onNavigate, onAddToCart }: P
           </div>
         </div>
       </div>
+
+      {showAuthModal && (
+        <AuthModal onClose={() => setShowAuthModal(false)} onSuccess={handleAdd} />
+      )}
     </div>
   );
 }
