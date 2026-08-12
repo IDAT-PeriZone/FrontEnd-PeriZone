@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import * as reportesApi from '../../api/reportes';
 import { ApiError } from '../../api/client';
-import type { ProductoMasVendido, VentaPorDia } from '../../types';
+import type { EstadoOrden, VentaDetalle, VentaPorDia } from '../../types';
 import BarChart from '../components/BarChart';
 import CsvDownloadButton from '../components/CsvDownloadButton';
 
@@ -11,19 +11,27 @@ function fechaISO(offsetDias = 0): string {
   return d.toISOString().slice(0, 10);
 }
 
+const ESTADO_BADGE: Record<EstadoOrden, string> = {
+  pendiente: 'adm-badge-warning',
+  procesando: 'adm-badge-warning',
+  enviado: 'adm-badge-accent',
+  entregado: 'adm-badge-success',
+  cancelado: 'adm-badge-danger',
+};
+
 export default function ReportesPage() {
   const [desde, setDesde] = useState(fechaISO(-6));
   const [hasta, setHasta] = useState(fechaISO());
   const [ventas, setVentas] = useState<VentaPorDia[]>([]);
-  const [topProductos, setTopProductos] = useState<ProductoMasVendido[]>([]);
+  const [ventasDetalle, setVentasDetalle] = useState<VentaDetalle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const fetchReportes = () => {
-    Promise.all([reportesApi.ventas(desde, hasta), reportesApi.productosMasVendidos(10)])
-      .then(([v, p]) => {
+    Promise.all([reportesApi.ventas(desde, hasta), reportesApi.ventasDetalle(desde, hasta)])
+      .then(([v, d]) => {
         setVentas(v);
-        setTopProductos(p);
+        setVentasDetalle(d);
       })
       .catch(err => setError(err instanceof ApiError ? err.message : 'No se pudieron cargar los reportes'))
       .finally(() => setLoading(false));
@@ -82,26 +90,34 @@ export default function ReportesPage() {
       </div>
 
       <div className="adm-card">
-        <h3 style={{ marginBottom: '1rem' }}>Productos más vendidos</h3>
-        {!loading && topProductos.length === 0 && <p className="adm-empty">Sin ventas registradas.</p>}
-        {topProductos.length > 0 && (
+        <h3 style={{ marginBottom: '1rem' }}>Ventas del período</h3>
+        {!loading && ventasDetalle.length === 0 && <p className="adm-empty">Sin ventas registradas en ese rango.</p>}
+        {ventasDetalle.length > 0 && (
           <div className="adm-table-wrap">
             <table className="adm-table">
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Producto</th>
-                  <th>Unidades vendidas</th>
-                  <th>Total generado</th>
+                  <th>Fecha</th>
+                  <th>Cliente</th>
+                  <th>Método</th>
+                  <th>Subtotal</th>
+                  <th>IGV</th>
+                  <th>Total</th>
+                  <th>Estado</th>
                 </tr>
               </thead>
               <tbody>
-                {topProductos.map((p, i) => (
-                  <tr key={p.id_producto}>
-                    <td>{i + 1}</td>
-                    <td>{p.nombre}</td>
-                    <td>{p.unidades_vendidas}</td>
-                    <td>S/ {p.total_generado.toFixed(2)}</td>
+                {ventasDetalle.map(v => (
+                  <tr key={v.id}>
+                    <td>#{v.id}</td>
+                    <td>{new Date(v.fecha_creacion).toLocaleDateString('es-PE')}</td>
+                    <td>{v.cliente_nombre} {v.cliente_apellido}</td>
+                    <td style={{ textTransform: 'capitalize' }}>{v.metodo_pago}</td>
+                    <td>S/ {v.subtotal.toFixed(2)}</td>
+                    <td>S/ {v.igv.toFixed(2)}</td>
+                    <td>S/ {v.total.toFixed(2)}</td>
+                    <td><span className={`adm-badge ${ESTADO_BADGE[v.estado]}`}>{v.estado}</span></td>
                   </tr>
                 ))}
               </tbody>

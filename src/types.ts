@@ -172,6 +172,18 @@ export interface VentaPorDia {
   total_vendido: number;
 }
 
+export interface VentaDetalle {
+  id: number;
+  fecha_creacion: string;
+  cliente_nombre: string;
+  cliente_apellido: string;
+  estado: EstadoOrden;
+  metodo_pago: MetodoPago;
+  subtotal: number;
+  igv: number;
+  total: number;
+}
+
 export interface ProductoMasVendido {
   id_producto: number;
   nombre: string;

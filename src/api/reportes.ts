@@ -1,7 +1,7 @@
 import { apiFetch, apiDownload } from './client';
 import { normalizarProducto } from './productos';
 import type { ProductoApi } from './productos';
-import type { Product, ProductoMasVendido, ResumenDashboard, VentaPorDia } from '../types';
+import type { Product, ProductoMasVendido, ResumenDashboard, VentaDetalle, VentaPorDia } from '../types';
 
 export function dashboard(): Promise<ResumenDashboard> {
   return apiFetch<ResumenDashboard>('/reportes/dashboard');
@@ -15,8 +15,19 @@ export async function ventas(desde: string, hasta: string): Promise<VentaPorDia[
   return data.map(v => ({ ...v, cantidad_ordenes: Number(v.cantidad_ordenes), total_vendido: Number(v.total_vendido) }));
 }
 
+/** Detalle fila por orden dentro del rango, para la tabla de ventas del período (no agregado por día). */
+export async function ventasDetalle(desde: string, hasta: string): Promise<VentaDetalle[]> {
+  const data = await apiFetch<(Omit<VentaDetalle, 'subtotal' | 'igv' | 'total'> & {
+    subtotal: string | number;
+    igv: string | number;
+    total: string | number;
+  })[]>(`/reportes/ventas-detalle?desde=${desde}&hasta=${hasta}`);
+  return data.map(v => ({ ...v, subtotal: Number(v.subtotal), igv: Number(v.igv), total: Number(v.total) }));
+}
+
+/** Exporta la misma información mostrada en la tabla de ventas (una fila por orden), respetando el filtro de fechas. */
 export function descargarVentasCsv(desde: string, hasta: string): Promise<void> {
-  return apiDownload(`/reportes/ventas?desde=${desde}&hasta=${hasta}&formato=csv`, 'reporte-ventas.csv');
+  return apiDownload(`/reportes/ventas-detalle?desde=${desde}&hasta=${hasta}&formato=csv`, 'reporte-ventas.csv');
 }
 
 export async function productosMasVendidos(limite = 10): Promise<ProductoMasVendido[]> {
