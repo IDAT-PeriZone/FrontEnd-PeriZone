@@ -426,16 +426,6 @@ function Step2Payment({
               </div>
             </div>
 
-            <p className="catalog-results-label">
-              Tarjetas de prueba (deben coincidir número, vencimiento y CVV exactamente):
-              <br />
-              <strong>4111 1111 1111 1111</strong> · Vence <strong>12/28</strong> · CVV <strong>123</strong> (aprobada)
-              <br />
-              <strong>5500 0000 0000 0004</strong> · Vence <strong>11/27</strong> · CVV <strong>456</strong> (aprobada)
-              <br />
-              Cualquier otro número, o un vencimiento/CVV que no coincida, es rechazado.
-            </p>
-
             <div className="card-form">
               <div className="form-group form-group--full">
                 <label>Número de Tarjeta</label>

@@ -5,6 +5,14 @@ import { useAuth } from '../../context/AuthContext';
 import { ApiError, getRolFromToken } from '../../api/client';
 import { esRolInterno } from '../roles';
 
+const CUENTAS_DEMO = [
+  { correo: 'admin@perizone.com', rol: 'Administrador' },
+  { correo: 'finanzas@perizone.com', rol: 'Finanzas' },
+  { correo: 'almacen@perizone.com', rol: 'Almacén' },
+  { correo: 'marketing@perizone.com', rol: 'Marketing' },
+];
+const CONTRASENIA_DEMO = 'Perizone123!';
+
 export default function LoginPage() {
   const { login, logout } = useAuth();
   const navigate = useNavigate();
@@ -73,6 +81,19 @@ export default function LoginPage() {
             {loading ? 'Ingresando…' : 'Ingresar'}
           </button>
         </form>
+      </div>
+
+      <div className="adm-login-demo">
+        <p className="adm-login-demo-title">Cuentas de prueba</p>
+        <ul className="adm-login-demo-list">
+          {CUENTAS_DEMO.map(c => (
+            <li key={c.correo}>
+              <span className="adm-login-demo-rol">{c.rol}</span>
+              <code>{c.correo}</code>
+            </li>
+          ))}
+        </ul>
+        <p className="adm-login-demo-pass">Contraseña para todas: <code>{CONTRASENIA_DEMO}</code></p>
       </div>
     </div>
   );

@@ -7,6 +7,9 @@ interface AuthModalProps {
   onSuccess?: () => void;
 }
 
+const CUENTA_DEMO_CORREO = 'cliente.prueba@perizone.com';
+const CUENTA_DEMO_PASS = 'Perizone123!';
+
 export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
   const { login, registrar } = useAuth();
   const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -160,6 +163,15 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
           <button className="btn-auth-submit" onClick={handleSubmit} disabled={submitting}>
             {submitting ? 'Procesando…' : mode === 'login' ? 'INICIAR SESIÓN' : 'REGISTRARME'}
           </button>
+
+          {mode === 'login' && (
+            <div className="auth-demo-hint">
+              <p className="auth-demo-hint-title">Cuenta de prueba (sin compras previas)</p>
+              <p>
+                <code>{CUENTA_DEMO_CORREO}</code> · <code>{CUENTA_DEMO_PASS}</code>
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -225,10 +225,18 @@
 .adm-denied h2 { color: var(--adm-danger); margin-bottom: 0.5rem; }
 
 /* ── Login ── */
-.adm-login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.adm-login-wrap { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 1rem; }
 .adm-login-card { width: 100%; max-width: 380px; background: var(--adm-panel); border: 1px solid var(--adm-border); border-radius: 16px; padding: 2rem; }
 .adm-login-brand { font-size: 1.6rem; font-weight: 800; text-align: center; margin-bottom: 0.3rem; }
 .adm-login-subtitle { text-align: center; color: var(--adm-text-dim); font-size: 0.85rem; margin-bottom: 1.75rem; }
+
+.adm-login-demo { width: 100%; max-width: 380px; background: var(--adm-panel-alt); border: 1px dashed var(--adm-border); border-radius: 12px; padding: 1rem 1.25rem; }
+.adm-login-demo-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--adm-text-dim); margin-bottom: 0.6rem; }
+.adm-login-demo-list { list-style: none; display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.6rem; }
+.adm-login-demo-list li { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; font-size: 0.8rem; }
+.adm-login-demo-rol { color: var(--adm-text-dim); }
+.adm-login-demo code, .adm-login-demo-pass code { background: var(--adm-bg); border: 1px solid var(--adm-border); border-radius: 6px; padding: 0.1rem 0.4rem; color: var(--adm-accent); font-size: 0.78rem; }
+.adm-login-demo-pass { font-size: 0.8rem; color: var(--adm-text-dim); border-top: 1px solid var(--adm-border); padding-top: 0.6rem; }
 
 /* ── Gráfico de barras (SVG a mano) ── */
 .adm-bar-chart { width: 100%; overflow-x: auto; }
